@@ -2,6 +2,8 @@
 
 A minimalist playground for the [laya-mlx](https://github.com/mizorewww/laya-mlx) typed decision model (`aac6fef/laya-mlx`). Backed by FastAPI.
 
+![Screenshot](screenshot.png)
+
 ## Requirements
 
 - Apple Silicon Mac
