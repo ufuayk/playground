@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ufuk's Laya-MLX Playground</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root { font-family: 'Inter', sans-serif; }
+  body {
+    background: #0b0b0e;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  .glass {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .glass-inset {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  textarea, select {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  textarea:focus, select:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.22);
+  }
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+  .bar-track { background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); background: rgba(255,255,255,0.28); }
+  .bar-fill.winner.choice { background: #67e8f9; }
+  .bar-fill.winner.score { background: #c4b5fd; }
+  .bar-fill.winner.noul-true { background: #6ee7b7; }
+  .bar-fill.winner.noul-false { background: rgba(255,255,255,0.28); }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+  .tab-btn { transition: color 0.15s, border-color 0.15s; }
+  .tab-btn.active { color: #e5e7eb; border-color: rgba(255,255,255,0.5); }
+  .tab-btn:not(.active) { color: #6b7280; border-color: transparent; }
+
+  @keyframes fade-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fade-in 0.35s cubic-bezier(0.16,1,0.3,1); }
+</style>
+</head>
+<body class="min-h-screen text-gray-300 antialiased">
+
+  <header class="border-b border-white/[0.06] px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <span class="text-[13px] text-gray-500">Ufuk's</span>
+      <span class="text-[15px] font-semibold text-white">Laya-MLX</span>
+      <span class="text-[13px] text-gray-500">Playground</span>
+    </div>
+    <div id="model-status" class="flex items-center gap-2 text-[12px] text-gray-500 mono">
+      <span class="w-1.5 h-1.5 rounded-full bg-gray-600 pulse-dot"></span>
+      <span id="model-status-text">checking model…</span>
+    </div>
+  </header>
+
+  <main class="grid grid-cols-1 lg:grid-cols-[400px_1fr_380px] gap-4 p-4 lg:h-[calc(100vh-61px)]">
+
+    <section class="glass rounded-xl p-5 flex flex-col gap-4 lg:overflow-y-auto">
+      <div>
+        <label class="text-[11px] font-medium tracking-wide text-gray-500 uppercase">Scenario</label>
+        <select id="scenario-select" class="w-full mt-2 rounded-lg px-3 py-2.5 text-[13px] text-gray-200">
+          <option value="">Loading scenarios…</option>
+        </select>
+      </div>
+
+      <div class="flex-1 flex flex-col min-h-[260px]">
+        <label class="text-[11px] font-medium tracking-wide text-gray-500 uppercase">State text</label>
+        <textarea id="state-text" class="w-full mt-2 flex-1 rounded-lg px-3 py-2.5 text-[13px] leading-relaxed resize-none mono" placeholder="Describe the current state / context for the model…"></textarea>
+      </div>
+
+      <button id="run-btn" class="w-full rounded-lg bg-white text-black font-medium text-[13px] py-2.5 hover:bg-gray-200 active:scale-[0.99] transition disabled:opacity-40 disabled:cursor-not-allowed">
+        Run prediction
+      </button>
+      <p id="run-error" class="hidden text-[12px] text-rose-400 -mt-2"></p>
+    </section>
+
+    <section class="glass rounded-xl p-5 flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <label class="text-[11px] font-medium tracking-wide text-gray-500 uppercase">Questions tree</label>
+        <span class="text-[11px] text-gray-600 mono">choice · score · noul</span>
+      </div>
+      <textarea id="questions-editor" spellcheck="false" class="flex-1 w-full rounded-lg px-4 py-3 text-[12.5px] leading-relaxed mono resize-none text-gray-300" placeholder="Select a scenario, or write your own questions tree here."></textarea>
+      <p id="json-error" class="hidden text-[12px] text-rose-400"></p>
+    </section>
+
+    <section class="glass rounded-xl p-5 flex flex-col gap-4 lg:overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h2 class="text-[11px] font-medium tracking-wide text-gray-500 uppercase">Results</h2>
+        <div class="flex gap-1 border-b border-white/[0.06]">
+          <button id="tab-visual" class="tab-btn active text-[12px] font-medium px-3 py-1.5 border-b-2">Visual</button>
+          <button id="tab-raw" class="tab-btn text-[12px] font-medium px-3 py-1.5 border-b-2">Raw JSON</button>
+        </div>
+      </div>
+
+      <div id="results-empty" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-16">
+        <p class="text-[13px] text-gray-600">No prediction yet</p>
+      </div>
+
+      <div id="results-visual" class="hidden flex-1 flex flex-col gap-5">
+        <div class="glass-inset rounded-lg px-4 py-3 flex items-end justify-between">
+          <div>
+            <p class="text-[11px] text-gray-500 uppercase tracking-wide">Latency</p>
+            <p id="latency-value" class="text-2xl font-semibold text-white mono mt-0.5">—</p>
+          </div>
+        </div>
+        <div id="answers-container" class="flex flex-col gap-4"></div>
+      </div>
+
+      <div id="results-raw" class="hidden flex-1">
+        <pre id="raw-json" class="glass-inset rounded-lg p-4 text-[12px] mono leading-relaxed text-gray-400 overflow-auto h-full whitespace-pre-wrap"></pre>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+    
+const API_BASE = '';
+let scenarios = [];
+
+const el = (id) => document.getElementById(id);
+
+async function checkModelStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/api/scenarios`);
+    if (res.ok) {
+      el('model-status-text').textContent = 'the model is ready';
+      el('model-status').querySelector('span.rounded-full').className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+    } else {
+      throw new Error();
+    }
+  } catch {
+    el('model-status-text').textContent = 'backend unreachable';
+    el('model-status').querySelector('span.rounded-full').className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
+  }
+}
+
+async function loadScenarios() {
+  try {
+    const res = await fetch(`${API_BASE}/api/scenarios`);
+    scenarios = await res.json();
+    const select = el('scenario-select');
+    select.innerHTML = '<option value="" selected>Select a scenario…</option>' +
+      scenarios.map((s) => `<option value="${s.id}">${s.label}</option>`).join('');
+    select.addEventListener('change', onScenarioChange);
+  } catch (err) {
+    el('scenario-select').innerHTML = '<option>Failed to load — is the backend running?</option>';
+  }
+}
+
+function onScenarioChange() {
+  const id = el('scenario-select').value;
+  if (!id) return; // "Select a scenario…" — leave fields as-is
+  const scenario = scenarios.find(s => s.id === id);
+  if (!scenario) return;
+  el('state-text').value = scenario.state_text;
+  el('questions-editor').value = JSON.stringify(scenario.questions, null, 2);
+}
+
+el('run-btn').addEventListener('click', runPrediction);
+
+async function runPrediction() {
+  const runBtn = el('run-btn');
+  const runError = el('run-error');
+  const jsonError = el('json-error');
+  runError.classList.add('hidden');
+  jsonError.classList.add('hidden');
+
+  const stateText = el('state-text').value.trim();
+  let questions;
+  try {
+    questions = JSON.parse(el('questions-editor').value || '{}');
+  } catch (e) {
+    jsonError.textContent = 'Invalid JSON in questions tree: ' + e.message;
+    jsonError.classList.remove('hidden');
+    return;
+  }
+
+  if (!stateText) {
+    runError.textContent = 'State text must not be empty.';
+    runError.classList.remove('hidden');
+    return;
+  }
+  if (!questions || Object.keys(questions).length === 0) {
+    jsonError.textContent = 'Questions tree must not be empty.';
+    jsonError.classList.remove('hidden');
+    return;
+  }
+
+  runBtn.disabled = true;
+  runBtn.textContent = 'Running…';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state_text: stateText, questions }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Prediction failed');
+    }
+    renderResults(data, questions);
+  } catch (err) {
+    runError.textContent = err.message;
+    runError.classList.remove('hidden');
+  } finally {
+    runBtn.disabled = false;
+    runBtn.textContent = 'Run prediction';
+  }
+}
+
+function renderResults(data, questions) {
+  el('results-empty').classList.add('hidden');
+  el('results-visual').classList.remove('hidden');
+  el('results-visual').classList.add('fade-in');
+
+  el('latency-value').textContent = `${data.latency_ms.toFixed(2)} ms`;
+  el('raw-json').textContent = JSON.stringify(data, null, 2);
+
+  const answers = data.answers || {};
+  const container = el('answers-container');
+  container.innerHTML = '';
+
+  Object.entries(answers).forEach(([key, ans]) => {
+    const qType = (questions[key] && questions[key].type) || ans.type || 'choice';
+    container.appendChild(renderAnswerCard(key, ans, qType));
+  });
+}
+
+function renderAnswerCard(key, ans, type) {
+  const card = document.createElement('div');
+  card.className = 'glass-inset rounded-lg p-4';
+
+  const header = document.createElement('div');
+  header.className = 'flex items-center justify-between mb-3';
+  header.innerHTML = `
+    <span class="text-[13px] font-medium text-white">${escapeHtml(key)}</span>
+    <span class="text-[10px] text-gray-500 uppercase tracking-wide">${type}</span>
+  `;
+  card.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'flex flex-col gap-2.5';
+
+  if (type === 'choice' && ans.probabilities) {
+    const sorted = Object.entries(ans.probabilities).sort((a, b) => b[1] - a[1]);
+    const winner = ans.answer;
+    sorted.forEach(([label, prob]) => body.appendChild(probRow(label, prob, label === winner, 'choice')));
+  } else if (type === 'score' && ans.probabilities) {
+    const entries = Array.isArray(ans.probabilities)
+      ? ans.probabilities.map((p, i) => [String(i), p])
+      : Object.entries(ans.probabilities);
+    const winnerLabel = ans.answer;
+    entries.forEach(([label, prob]) => body.appendChild(probRow(label, prob, label === String(winnerLabel) || label === winnerLabel, 'score')));
+    if (ans.expected_score !== undefined) {
+      const exp = document.createElement('p');
+      exp.className = 'text-[11px] text-gray-500 mono mt-0.5';
+      exp.textContent = `expected score: ${ans.expected_score}`;
+      body.appendChild(exp);
+    }
+  } else if (type === 'noul') {
+    const pTrue = ans.probability ?? ans.p_true ?? ans.answer;
+    const trueVal = typeof pTrue === 'number' ? pTrue : (ans.answer ? 1 : 0);
+    body.appendChild(probRow('true', trueVal, trueVal >= 0.5, 'noul-true'));
+    body.appendChild(probRow('false', 1 - trueVal, trueVal < 0.5, 'noul-false'));
+  } else {
+    const pre = document.createElement('pre');
+    pre.className = 'text-[11px] text-gray-500 mono whitespace-pre-wrap';
+    pre.textContent = JSON.stringify(ans, null, 2);
+    body.appendChild(pre);
+  }
+
+  card.appendChild(body);
+
+  if (ans.confidence !== undefined || ans.answer_confidence !== undefined) {
+    const footer = document.createElement('div');
+    footer.className = 'flex gap-4 mt-3 pt-3 border-t border-white/[0.05] text-[11px] text-gray-600 mono';
+    if (ans.confidence !== undefined) footer.innerHTML += `<span>confidence ${Number(ans.confidence).toFixed(3)}</span>`;
+    if (ans.answer_confidence !== undefined) footer.innerHTML += `<span>answer_confidence ${Number(ans.answer_confidence).toFixed(3)}</span>`;
+    card.appendChild(footer);
+  }
+
+  return card;
+}
+
+function probRow(label, prob, isWinner, barClass) {
+  const row = document.createElement('div');
+
+  const pct = Math.max(0, Math.min(1, prob)) * 100;
+
+  row.innerHTML = `
+    <div class="flex items-center justify-between mb-1">
+      <span class="text-[12.5px] ${isWinner ? 'text-white font-medium' : 'text-gray-500'}">
+        ${escapeHtml(String(label))}
+      </span>
+      <span class="text-[11.5px] mono ${isWinner ? 'text-white' : 'text-gray-600'}">${pct.toFixed(1)}%</span>
+    </div>
+    <div class="bar-track h-1">
+      <div class="bar-fill ${isWinner ? 'winner ' + barClass : ''}" style="width: ${pct}%"></div>
+    </div>
+  `;
+  return row;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+el('tab-visual').addEventListener('click', () => switchTab('visual'));
+el('tab-raw').addEventListener('click', () => switchTab('raw'));
+
+function switchTab(tab) {
+  const hasResult = !el('results-empty').classList.contains('hidden') === false;
+  el('tab-visual').classList.toggle('active', tab === 'visual');
+  el('tab-raw').classList.toggle('active', tab === 'raw');
+  if (!hasResult) return; // nothing predicted yet — keep the empty state showing
+  el('results-visual').classList.toggle('hidden', tab !== 'visual');
+  el('results-raw').classList.toggle('hidden', tab !== 'raw');
+}
+
+checkModelStatus();
+loadScenarios();
+</script>
+</body>
+</html>

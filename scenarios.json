@@ -1,0 +1,186 @@
+[
+  {
+    "id": "cybersecurity",
+    "label": "Cybersecurity — SSH Brute Force",
+    "state_text": "[2026-10-02 15:26:00] CRITICAL: 50000 failed SSH attempts from Singapore IP.",
+    "questions": {
+      "threat_level": {
+        "type": "score",
+        "instructions": "Rate the threat level of this event. Low: under 100 failed attempts. Medium: 100-1000 failed attempts. High: 1000-10000 failed attempts. Critical: 10000+ failed attempts.",
+        "criteria": ["Low", "Medium", "High", "Critical"]
+      },
+      "action": {
+        "type": "choice",
+        "instructions": "What action should be taken in response to this event?",
+        "criteria": ["ip_ban", "ignore", "alert_admin"]
+      },
+      "is_attack": {
+        "type": "noul",
+        "instructions": "Does this event represent an active attack in progress?"
+      }
+    }
+  },
+  {
+    "id": "ecommerce",
+    "label": "E-commerce — Duplicate Charge",
+    "state_text": "I was charged twice for a 1200 TRY order, refund me now or I will sue.",
+    "questions": {
+      "department": {
+        "type": "choice",
+        "instructions": "Which department should handle this customer message?",
+        "criteria": ["technical", "billing", "shipping"]
+      },
+      "urgency": {
+        "type": "score",
+        "instructions": "How urgently does this message need to be handled?",
+        "criteria": ["Low", "Normal", "High", "Critical"]
+      },
+      "legal_threat": {
+        "type": "noul",
+        "instructions": "Does the customer threaten legal action?"
+      }
+    }
+  },
+  {
+    "id": "iot",
+    "label": "IoT Anomaly — Kitchen Sensor",
+    "state_text": "Sensor: Kitchen, 03:45 AM, Motion: Yes, Smoke: No, Mode: Sleep.",
+    "questions": {
+      "analysis": {
+        "type": "choice",
+        "instructions": "What most likely explains this sensor reading?",
+        "criteria": ["pet_movement", "intruder", "owner_awake"]
+      },
+      "trigger_alarm": {
+        "type": "noul",
+        "instructions": "Should the security alarm be triggered based on this reading?"
+      }
+    }
+  },
+  {
+    "id": "support_ticket",
+    "label": "DevOps — On-call Page",
+    "state_text": "[PagerDuty] API latency p99 at 8400ms, up from 120ms baseline. Error rate 2.1%. Started 6 minutes ago, no deploys in the last 4 hours.",
+    "questions": {
+      "severity": {
+        "type": "score",
+        "instructions": "Rate the incident severity. Minor: degraded but usable. Moderate: noticeable user impact. Major: significant outage risk. Severe: full outage or data risk.",
+        "criteria": ["Minor", "Moderate", "Major", "Severe"]
+      },
+      "likely_cause": {
+        "type": "choice",
+        "instructions": "What is the most likely root cause category given no recent deploys?",
+        "criteria": ["database_overload", "upstream_dependency", "traffic_spike", "infrastructure_failure"]
+      },
+      "page_oncall": {
+        "type": "noul",
+        "instructions": "Should the on-call engineer be paged immediately for this?"
+      }
+    }
+  },
+  {
+    "id": "content_moderation",
+    "label": "Content Moderation — User Report",
+    "state_text": "Reported comment: 'Nice photo, where exactly was this taken? What's your address lol.' Reported by: post author. Account age: 3 days. No prior reports.",
+    "questions": {
+      "risk_category": {
+        "type": "choice",
+        "instructions": "What is the primary risk this comment represents?",
+        "criteria": ["harassment", "stalking_concern", "spam", "benign"]
+      },
+      "confidence_level": {
+        "type": "score",
+        "instructions": "How confident is the assessment given the limited context (new account, single comment)?",
+        "criteria": ["Low", "Medium", "High"]
+      },
+      "requires_human_review": {
+        "type": "noul",
+        "instructions": "Does this case require escalation to a human moderator rather than automated action?"
+      }
+    }
+  },
+  {
+    "id": "medical_triage",
+    "label": "Medical Triage — ER Intake",
+    "state_text": "Patient: 34yo male. Chief complaint: chest tightness and shortness of breath started 20 minutes ago during exercise. History of asthma. No prior cardiac issues. Pain not radiating.",
+    "questions": {
+      "triage_level": {
+        "type": "score",
+        "instructions": "Assign an ESI-style triage urgency. Low: can wait, routine. Moderate: should be seen soon. High: needs prompt evaluation. Immediate: life-threatening, see now.",
+        "criteria": ["Low", "Moderate", "High", "Immediate"]
+      },
+      "likely_category": {
+        "type": "choice",
+        "instructions": "What category best fits the likely cause of these symptoms?",
+        "criteria": ["respiratory", "cardiac", "musculoskeletal", "anxiety_related"]
+      },
+      "needs_immediate_ecg": {
+        "type": "noul",
+        "instructions": "Should an ECG be ordered immediately given these symptoms?"
+      }
+    }
+  },
+  {
+    "id": "financial_fraud",
+    "label": "Financial Fraud — Card Transaction",
+    "state_text": "Card ending 4471: $2,850 charge at an electronics retailer in a country the cardholder has never transacted in, 40 minutes after a $12 coffee purchase in their home city. Card-present, chip transaction.",
+    "questions": {
+      "fraud_risk": {
+        "type": "score",
+        "instructions": "Rate the fraud risk of this transaction. Low: consistent with normal behavior. Medium: some anomaly but explainable. High: strong anomaly indicators. Critical: near-certain fraud pattern.",
+        "criteria": ["Low", "Medium", "High", "Critical"]
+      },
+      "recommended_action": {
+        "type": "choice",
+        "instructions": "What should happen to this transaction?",
+        "criteria": ["approve", "decline_and_flag", "hold_for_verification", "approve_and_monitor"]
+      },
+      "notify_cardholder": {
+        "type": "noul",
+        "instructions": "Should the cardholder be proactively notified about this transaction?"
+      }
+    }
+  },
+  {
+    "id": "server_alert_benign",
+    "label": "Server Alert — Scheduled Maintenance Spike",
+    "state_text": "[Monitoring] CPU usage on db-replica-03 jumped from 15% to 95% at 02:00 AM. Alert correlates with the scheduled nightly backup job (cron: 'nightly_backup', runs 02:00-02:45 daily). No error logs. Replica lag: 0s. This pattern has repeated identically every night for the past 90 days.",
+    "questions": {
+      "severity": {
+        "type": "score",
+        "instructions": "Rate the severity of this event. Minor: expected/benign. Moderate: worth a look. Major: likely incident. Severe: confirmed incident.",
+        "criteria": ["Minor", "Moderate", "Major", "Severe"]
+      },
+      "likely_cause": {
+        "type": "choice",
+        "instructions": "What is the most likely explanation for this CPU spike?",
+        "criteria": ["scheduled_job", "runaway_query", "ddos_attack", "hardware_failure"]
+      },
+      "page_oncall": {
+        "type": "noul",
+        "instructions": "Should the on-call engineer be paged for this event?"
+      }
+    }
+  },
+  {
+    "id": "hr_message_benign",
+    "label": "HR Inbox — Dramatic but Routine Message",
+    "state_text": "Email subject: 'URGENT!!! This is UNACCEPTABLE.' Body: 'I have been trying to update my direct deposit information for THREE DAYS and the portal keeps timing out. This is honestly ridiculous, I need this fixed before Friday's payroll run. Please advise ASAP.' Sender: employee, 2 years tenure, no prior complaints on file.",
+    "questions": {
+      "escalation_level": {
+        "type": "score",
+        "instructions": "How urgently does this message need a response? Low: can wait a few days. Normal: respond within a day. High: respond same day. Critical: respond within the hour.",
+        "criteria": ["Low", "Normal", "High", "Critical"]
+      },
+      "department": {
+        "type": "choice",
+        "instructions": "Which team should handle this request?",
+        "criteria": ["payroll_it", "employee_relations", "legal", "management_escalation"]
+      },
+      "is_hostile_complaint": {
+        "type": "noul",
+        "instructions": "Does this message represent a hostile or grievance-driven complaint requiring formal HR intervention, as opposed to a routine technical access issue expressed with frustration?"
+      }
+    }
+  }
+]
